@@ -2,11 +2,11 @@
 %define stdout      1
 %define stderr      2
 
-%define SYS_nosys   0
-%define SYS_exit    1
-%define SYS_fork    2
-%define SYS_read    3
-%define SYS_write   4
+%define SYS_nosys   0x2000000
+%define SYS_exit    0x2000001
+%define SYS_fork    0x2000002
+%define SYS_read    0x2000003
+%define SYS_write   0x2000004
 
 section .text
 align 4
