@@ -33,11 +33,9 @@ while:
   cmp [rdi], byte 0xA
   je exit
   inc rdi
-debug:
   jmp while
 exit:
   sub rdi, rax
   mov rax, rdi
-end:
   leave
   ret
