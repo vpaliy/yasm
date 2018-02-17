@@ -1,60 +1,60 @@
 section .data
-  array:            db 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36
+  array:            dq 0x33, 0x31, 0x32
   print_format:     db '%d',0xA
 
 section .text
   bits 64
-  extern _printf
-  extern _scanf
   global _main
-  global _bubble_sort
+  global _sort
+  extern _printf
 
 _main:
 default rel
-  push rbp
+  push rsp
   mov rbp, rsp
+  xor rcx, rcx
   mov rax, qword array
   push rax
-  push 0x7
-;  call _bubble_sort
+  push 0x3
+  call _sort
   add rsp, 0x10
-  xor rbx, rbx
-  mov rbx, qword array
-  mov rax, [rbx]
-  xor rcx, rcx
-.while:
-  cmp rcx, 0x7
-  jge .end
-  mov rsi, [rbx]
-.debug:
-  lea rdi, [print_format]
-;  call _printf
-  inc rcx
-  jmp .while
-.end:
   leave
   ret
 
-_bubble_sort:
+_sort:
   push rbp
   mov rbp, rsp
   push rsi
   push rdi
-  push rcx
   push rax
-  mov rsi, [rbp + 0x18]   ; array
-  mov rdi, [rbp + 0x10]   ; length
-  xor rcx, rcx
-.for:
-  inc rcx
-  cmp rcx, rdi
-  jg .end
-  mov rax, [rsi-0x1]
-  cmp qword [rsi+0x1*rcx], rax
-  jmp .for
+  mov rsi, [rbp + 0x18]
+  mov rdi, [rbp + 0x10]
+  lea rdi, [rsi + rdi]
+.while:
+  cmp rsi, rdi
+  jge .end
+  mov rax, rsi
+.nested:
+  lea rax, [rax + 0x8]
+  cmp rax, rdi
+  jge .finish
+  push rax
+  mov rax, [rax]
+  cmp rax,[rsi]
+  jge .set
+  ; swap values
+  xor rax, [rsi]
+  xor [rsi], rax
+  xor rax, [rsi]
+.set:
+  pop rax
+  jmp  .nested
+.finish:
+  lea rsi, [rsi + 0x8]
+  jmp .while
 .end:
   pop rax
-  pop rcx
   pop rdi
+  pop rsi
   leave
   ret
