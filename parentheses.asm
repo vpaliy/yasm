@@ -1,7 +1,7 @@
 %include 'utils/arrays.inc'
 
 section .bss
-  array resb 100
+  array resq 100
 
 section .text
   bits 64
@@ -13,7 +13,13 @@ default rel
   mov rbp, rsp
   mov rax, qword array
   push rax
-  push 100
+  push 0x64
   call _fill
+  add rsp, 0x10
+  mov rax, qword array
+  push rax
+  push 0x10
+  call _print
+  add rsp, 0x10
   leave
   ret
