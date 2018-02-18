@@ -1,9 +1,13 @@
 
 section .data
   format:    db "%d",0xA,0
+  eof:       db 0xA,0
 
 section .text
   global _fill
+  global _min
+  global _max
+  global _print
   extern _random
   extern _printf
 ; fills an array of size N with random numbers
@@ -63,6 +67,9 @@ _print:
   lea rsi, [rsi + 0x8]
   jmp .while
 .end:
+  mov rdi, qword eof
+  xor rax, rax
+  call _printf
   add rsp, 0x18
   pop rdi
   pop rdx

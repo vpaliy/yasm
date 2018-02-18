@@ -1,7 +1,15 @@
 %include '../utils/arrays.inc'
 
+%define SIZE 0x2
+
 section .bss
-  array resq 0xA
+  array resq SIZE
+
+%macro prepare 0
+  mov rax, qword array
+  push rax
+  push SIZE
+%endmacro
 
 section .text
   global _main
@@ -12,27 +20,19 @@ default rel
   push rbp
   mov rbp, rsp
 
-  mov rax, qword array
-  push rax
-  push 0xA
+  prepare
   call _fill
   add rsp, 0x10
 
-  mov rax, qword array
-  push rax
-  push 0xA
+  prepare
   call _print
   add rsp, 0x10
 
-  mov rax, qword array
-  push rax
-  push 0xA
+  prepare
   call _bubble
   add rsp, 0x10
 
-  mov rax, qword array
-  push rax
-  push 0xA
+  prepare
   call _print
   add rsp, 0x10
 

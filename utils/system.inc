@@ -40,10 +40,11 @@ section .text
   push rsi
   mov rdi, %1
   mov rsi, %2
+  xor rax, rax
   call _printf
   xor rax, rax
   pop rsi
-  pop rdx
+  pop rdi
 %endmacro
 
 %macro  sys.exit    0

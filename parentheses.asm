@@ -1,7 +1,9 @@
 %include 'utils/arrays.inc'
+%include 'utils/system.inc'
 
-section .bss
-  array resq 100
+section .data
+  string:     dq "()()()()",0xA
+  print:      db '%d',0xA
 
 section .text
   bits 64
@@ -11,34 +13,48 @@ _main:
 default rel
   push rbp
   mov rbp, rsp
-  mov rax, qword array
+  mov rax, qword string
   push rax
-  push 0x63
-  call _fill
-  add rsp, 0x10
-  mov rax, qword array
-  push rax
-  push 0x64
-  call _print
-  add rsp, 0x10
-  mov rsi, qword array
-  mov rdi, 0x64
-  call _min
-  ;
-  lea rdi, [format]
-  mov rsi, rax
-  xor rax, rax
-  call _printf
-  xor rax, rax
+  call _parentheses
+  add rsp, 0x8
+  out qword format, rax ; prints -1
+  leave
+  ret
 
-  mov rsi, qword array
-  mov rdi, 0x64
-  call _max
-  ;
-  lea rdi, [format]
-  mov rsi, rax
+; checks for a balanced set of parentheses
+; returns 0 if balanced
+; -1 otherwise
+_parentheses:
+  push rbp
+  mov rbp, rsp
+  push rsi
+  push r8
   xor rax, rax
-  call _printf
-  xor rax, rax
+  xor r8, r8
+  mov rsi, [rbp + 0x10]
+.while:
+  cmp [rsi], byte 0xA
+  je .end
+  cmp [rsi],byte 0x0
+  je .end
+  cmp [rsi], byte 0x28  ;
+  jne .elseif
+  inc rax
+  jmp .reset
+.elseif:
+  cmp [rsi], byte 0x29
+  jne .reset
+  inc r8
+.reset:
+  inc rsi
+  jmp .while
+.end:
+  sub rax, r8
+  mov r8, -1
+  cmp rax, byte 0x0
+  cmovnz rax, r8
+  pop r8
+  pop rsi
+debug:
   leave
   ret
