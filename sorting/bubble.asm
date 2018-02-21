@@ -68,8 +68,7 @@ _bubble:
 .proceed:
   pop r8
   mov [r8], rax
-  mov rax, r8
-  lea rax, [rax + 0x8]
+  lea rax, [r8 + 0x8]
   jmp .inner
 .reset:
   lea rsi, [rsi + 0x8]
