@@ -39,7 +39,7 @@ default rel
   leave
   ret
 
-; Bubble sort (2 loops) O(n)
+; Bubble sort (2 loops) O(n^2)
 ; 1 - array
 ; 2 - length
 _bubble:
