@@ -2,7 +2,7 @@
 ; 2018
 
 ; rdi - string
-; rax - length + zerp byte
+; rax - length + zero byte
 _length:
   mov rax, rdi
 .while:
@@ -43,5 +43,21 @@ _index_of:
   inc rax
   inc rdi
   jmp .while
+.end:
+  ret
+
+; rdi - string
+; rax - (1 - yes, 0 - no)
+_is_decimal:
+  xor rax, rax
+.while:
+  cmp [rdi], byte 0x30
+  jl .end
+  cmp [rdi], byte 0x39
+  jg .end
+  lea rdi, [rdi + 0x1]
+  cmp [rdi], byte 0x0
+  jne .while
+  mov rax, 0x1
 .end:
   ret
