@@ -1,29 +1,8 @@
-%include 'system.inc'
-
-section .data
-  array:      db "2l",0xA, 0x0
-  example:    db "l"
-  format:     dq "%d",0xA,0
-
-section .text
-  bits 64
-  global _length
-  global _main
-
-; finds the length of a string
-_main:
-default rel
-  push rbp
-  mov rbp, rsp
-  mov rdi, qword array
-  mov rsi, [example]
-  call _contains
-  out qword format, rax
-  leave
-  ret
+; Created by Vasyl Paliy
+; 2018
 
 ; rdi - string
-; rax - length
+; rax - length + zerp byte
 _length:
   mov rax, rdi
 .while:
@@ -38,19 +17,31 @@ _length:
 ; rdi - string
 ; rsi - element (not a string)
 ; rax - (0 - absent, 1 - contains)
+; works only for ASCII
 _contains:
-  push rbp
-  mov rbp, rsp
   xor rax, rax
 .while:
   cmp [rdi], byte 0x0
   je .end
-  cmp [rdi], qword rsi
-  je .contains
-  inc rdi
-  jmp .while
-.contains:
+  cmp [rdi], byte sil
+  lea rdi, [rdi + 0x1]
+  jne .while
   mov rax, 0x1
 .end:
-  leave
+  ret
+
+; rdi - string
+; rsi - element (not a string)
+; works only for ASCII
+_index_of:
+  xor rax, rax
+.while:
+  cmp [rdi], byte 0x0
+  je .end
+  cmp [rdi], byte sil
+  je .end
+  inc rax
+  inc rdi
+  jmp .while
+.end:
   ret
