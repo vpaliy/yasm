@@ -10,6 +10,9 @@ section .text
   global _print
   extern _random
   extern _printf
+
+; 1 - array
+; 2 - length
 ; fills an array of size N with random numbers
 _fill:
 .first equ  0x0

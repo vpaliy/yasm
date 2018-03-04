@@ -1,11 +1,12 @@
 #include "mem.h"
-
+int below;
+int size = 0;
 void* memcopy(void* dest, void* source, size_t length, size_t size)
 {
   if(!length||!size||!source)
     return dest;
   else if(!dest)
-    dest=malloc(length,size);
+    dest=calloc(length,size);
   /* Cast this too unsigned long, so the data will be moved in bigger chunks */
   unsigned long* source_ul = (unsigned long*)(source);
   unsigned long* dest_ul = (unsigned long*)(dest);
@@ -23,4 +24,15 @@ void* memcopy(void* dest, void* source, size_t length, size_t size)
   while(copied++ <= length)
     *dest_uc++ = *source_uc++;
   return dest;
+}
+
+int main(int argc, char* argv[]) {
+  void* pointer = sbrk(0);
+  printf("%p\n", &size);
+    printf("%p\n", &below);
+  printf("%p\n",pointer);
+  pointer = sbrk(1);
+  printf("%p\n",pointer);
+  pointer = sbrk(0);
+  printf("%p\n",pointer);
 }
