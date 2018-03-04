@@ -1,8 +1,9 @@
 ; Created by Vasyl Paliy 2018
 ; This file contains an implementation of a doubly linked list
 ; _create () - creates a node with null values.
-; _append (node) - appends a node to the end of the passed node
+; _append (node, info) - appends a node to the end of the passed node
 ; _reverse (node) - reverses the list
+; add_front (node, info) - adds a node to the front
 ; _show(node) - prints
 
 %define null 0x00000000
@@ -44,26 +45,27 @@ _main:
 
   mov rdi, rax
   mov rsi, 0x10
-  call _append
+  call _add_front
 
   mov rdi, rax
   mov rsi, 0x11
-  call _append
+  call _add_front
 
   mov rdi, rax
   mov rsi, 0x12
-  call _append
+  call _add_front
 
   mov rdi, rax
   mov rsi, 0x13
-  call _append
+  call _add_front
 
   mov rdi, rax
-  call _reverse
+  call _size
 
   mov rdi, qword format
   mov rsi, rax
-  call _show
+  xor rax, rax
+  call _printf
 
   leave
   ret
@@ -118,6 +120,23 @@ _append:
   ret
 
 ; rdi - head node
+; rsi - info
+; return: rax - head node
+_add_front:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 0x10
+  mov [rsp], rsi
+  call _create
+  mov rsi, [rsp]
+  mov [rax + node.info], rsi
+  mov [rax + node.next], rdi
+  mov [rdi + node.prev], rax
+  add rsp, 0x10
+  leave
+  ret
+
+; rdi - head node
 ; return: rax - head node
 ; O(n) - time, O(1) - memory
 _reverse:
@@ -141,6 +160,80 @@ _reverse:
   leave
   ret
 
+
+; rdi - node
+; rsi - info
+_index_of:
+  push rbp
+  mov rbp, rsp
+  xor rax, rax
+.for:
+  cmp rdi, null
+  je .done
+  cmp [rdi + node.info], rsi
+  je .done
+  inc rax
+  mov rdi, [rdi + node.next]
+  jmp .for
+.done:
+  mov rsi, -1
+  cmp rdi, null
+  cmove rax, rsi
+  leave
+  ret
+
+; rdi - node
+; rsi - info
+; return: rax - node
+_find:
+  push rbp
+  mov rbp, rsp
+.for:
+  cmp rdi, null
+  je .done
+  cmp [rdi + node.info], rsi
+  je .done
+  lea rdi, [rdi + node.next]
+  jmp .for
+.done:
+  mov rax, rdi
+  leave
+  ret
+
+; rdi - node
+; rsi - info
+_contains:
+  push rbp
+  mov rbp, rsp
+  mov rax, -1
+.for:
+  cmp rdi, null
+  je .done
+  cmp [rdi + node.info], rsi
+  je .found
+  mov rdi, [rdi + node.next]
+  jmp .for
+.found:
+  mov rax, 0x1
+.done:
+  leave
+  ret
+
+; rdi - head node
+; return: rax - size/
+_size:
+  push rbp
+  mov rbp, rsp
+  xor rax, rax
+.for:
+  cmp rdi, null
+  je .done
+  inc rax
+  mov rdi, [rdi + node.next]
+  jmp .for
+.done:
+  leave
+  ret
 
 ; rdi - format
 ; rsi - head node
