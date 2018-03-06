@@ -1,5 +1,4 @@
 ; Created by Vasyl Paliy
-
 %define null 0x00000000
 
 ; 1 - root node
@@ -180,13 +179,11 @@ _show:
 
   ; show left subtree
   mov rdi, [rsp]
-  mov rdi, [rdi + node.left]
-  call _show
+  show [rdi + node.left]
 
   ; show right subtree
   mov rdi, [rsp]
-  mov rdi, [rdi + node.right]
-  call _show
+  show [rdi + node.right]
 
   add rsp, 0x10
 .end:
