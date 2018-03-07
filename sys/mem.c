@@ -1,6 +1,54 @@
 #include "mem.h"
-int below;
-int size = 0;
+#include <assert.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#define SIZE 2048
+#define META_SIZE sizeof(page_t)
+#define SBRK_ERROR (void*)(-1)
+
+page_t* global;
+page_t* last;
+
+page_t* find(page_t* head, size_t size)
+{
+  while(head) {
+    if(head->size == size && head->free)
+      return head;
+    head = head->next;
+  }
+  return NULL;
+}
+
+page_t* allocate(size_t size)
+{
+  page_t* node = sbrk(0);
+  void* pointer = sbrk(size + sizeof(page_t));
+  if(pointer == SBRK_ERROR)
+    return NULL;
+  if(last != NULL)
+    last->next = node;
+  last = node;
+  node->next = NULL;
+  node->free = false;
+  node->size = size;
+  return node;
+}
+
+void* memalloc(size_t size)
+{
+  page_t* result = NULL;
+  if(global == NULL){
+    global = allocate(size);
+    result = global;
+  }else {
+    result = find(global, size);
+    if(result == NULL)
+      result = allocate(size);
+  }
+  return result ? (result + 1) : result;
+}
+
 void* memcopy(void* dest, void* source, size_t length, size_t size)
 {
   if(!length||!size||!source)
@@ -26,13 +74,11 @@ void* memcopy(void* dest, void* source, size_t length, size_t size)
   return dest;
 }
 
-int main(int argc, char* argv[]) {
-  void* pointer = sbrk(0);
-  printf("%p\n", &size);
-    printf("%p\n", &below);
-  printf("%p\n",pointer);
-  pointer = sbrk(1);
-  printf("%p\n",pointer);
-  pointer = sbrk(0);
-  printf("%p\n",pointer);
+int main(int argc, char** argv)
+{
+  for(int index =0; index <= 2; index++){
+    char* pointer = memalloc(10);
+    printf("%p\n", pointer);
+  }
+  return 1;
 }

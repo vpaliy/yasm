@@ -1,4 +1,5 @@
 ; Created by Vasyl Paliy
+
 %define null 0x00000000
 
 ; 1 - root node
@@ -32,6 +33,33 @@
   call _show
 %endmacro
 
+; 1 - root node
+%macro size 1
+  mov rdi, %1
+  call _size
+%endmacro
+
+; 1 - root node
+%macro max_depth 1
+  mov rdi, %1
+  xor rax, rax
+  call _max_depth
+%endmacro
+
+; 1 - root node
+%macro min_depth 1
+  mov rdi, %1
+  call _min_depth
+%endmacro
+
+; 1 - root node
+; 2 - key
+%macro delete 2
+  mov rdi, %1
+  mov rsi, %2
+  call _delete
+%endmacro
+
 section .data
   struc node
     .key:       resq 1
@@ -50,7 +78,6 @@ section .text
   extern _malloc
   extern _printf
 
-;  16, 8, 7, 10, 18, 17, 19
 _main:
   push rbp
   mov rbp, rsp
@@ -62,7 +89,14 @@ _main:
   insert rax, 0x12, 0x10
   insert rax, 0x11, 0x10
   insert rax, 0x13, 0x10
-  show rax
+  insert rax, 0x14, 0x10
+  insert rax, 0x15, 0x10
+  min_depth rax
+
+  mov rdi, qword format
+  mov rsi, rax
+  xor rax, rax
+  call _printf
 
   leave
   ret
@@ -165,6 +199,129 @@ _insert:
   ret
 
 ; rdi - root node
+; return: rax - the number of nodes
+_size:
+  push rbp
+  mov rbp, rsp
+  xor rax, rax
+  push rdi
+.for:
+  ; if the stack is empty, then finish
+  cmp rsp, rbp
+  jge .done
+  ; if the node is a leaf, then restart
+  pop rdi
+  cmp rdi, null
+  je .for
+  ; otherwise, increment the counter
+  inc rax
+  push qword [rdi + node.left]
+  push qword [rdi + node.right]
+  jmp .for
+.done:
+  leave
+  ret
+
+; rdi - root node
+; return: rax - max depth
+_max_depth:
+  push rbp
+  mov rbp, rsp
+  ; if it's a leaf, then return
+  xor rax, rax
+  cmp rdi, null
+  je .done
+
+  inc rax
+  ; allocate memory to keep the current size
+  sub rsp, 0x10
+  mov [rsp], rax
+  mov [rsp + 0x8], rdi
+  ; get the depth of the left subtree
+  mov rdi, [rdi + node.left]
+  call _max_depth
+  ; save it
+  mov r8, rax
+  mov rax, [rsp]
+  mov [rsp], r8
+  ; move to the right subtree
+  mov rdi, [rsp + 0x8]
+  mov rdi, [rdi + node.right]
+  ; put the initial length
+  mov [rsp + 0x8], rax
+  ; get the depth of the right subtree
+  call _max_depth
+  mov r8, [rsp]
+  ; move the bigger value into r8
+  cmp r8, rax
+  cmovl r8, rax
+  ; add to the initial depth
+  mov rax, [rsp + 0x8]
+  add rax, r8
+  ; release stack
+  add rsp, 0x10
+.done:
+  leave
+  ret
+
+; rdi - root node
+; return: rax - max depth
+_min_depth:
+  push rbp
+  mov rbp, rsp
+  ; if it's a leaf, then return
+  xor rax, rax
+  cmp rdi, null
+  je .done
+
+  inc rax
+  ; allocate memory to keep the current size
+  sub rsp, 0x10
+  mov [rsp], rax
+  mov [rsp + 0x8], rdi
+  ; get the depth of the left subtree
+  mov rdi, [rdi + node.left]
+  call _max_depth
+  ; save it
+  mov r8, rax
+  mov rax, [rsp]
+  mov [rsp], r8
+  ; move to the right subtree
+  mov rdi, [rsp + 0x8]
+  mov rdi, [rdi + node.right]
+  ; put the initial length
+  mov [rsp + 0x8], rax
+  ; get the depth of the right subtree
+  call _max_depth
+  mov r8, [rsp]
+  ; move the bigger value into r8
+  cmp r8, rax
+  cmovg r8, rax
+  ; add to the initial depth
+  mov rax, [rsp + 0x8]
+  add rax, r8
+  ; release stack
+  add rsp, 0x10
+.done:
+  leave
+  ret
+
+; rdi - root node
+_delete:
+  push rbp
+  mov rbp, rsp
+  find rdi
+  cmp rax, null
+  je .done
+  mov rdi, [rax + node.parent]
+.for:
+  cmp [rax + node.left], null
+
+.done:
+  leave
+  ret
+
+; rdi - root node
 _show:
   push rbp
   mov rbp, rsp
@@ -184,7 +341,6 @@ _show:
   ; show right subtree
   mov rdi, [rsp]
   show [rdi + node.right]
-
   add rsp, 0x10
 .end:
   leave
