@@ -60,6 +60,18 @@
   call _delete
 %endmacro
 
+; 1 - root node
+%macro max 1
+  mov rdi, %1
+  call _max
+%endmacro
+
+; 1 - root node
+%macro min 1
+  mov rdi, %1
+  call _min
+%endmacro
+
 section .data
   struc node
     .key:       resq 1
@@ -307,6 +319,34 @@ _min_depth:
   ret
 
 ; rdi - root node
+; return: rax - the max node
+_max:
+  push rbp
+  mov rbp, rsp
+.for:
+  cmp [rdi + node.right], null
+  je .done
+  mov rdi, [rdi + node.right]
+  jmp .for
+.done:
+  leave
+  ret
+
+; rdi - root node
+; return: rax - the min node
+_min:
+  push rbp
+  mov rbp, rsp
+.for:
+  cmp rdi, [rdi + node.left]
+  je .done
+  mov rdi, [rdi + node.left]
+  jmp .for
+.done:
+  leave
+  ret
+
+; rdi - root node
 _delete:
   push rbp
   mov rbp, rsp
@@ -316,7 +356,7 @@ _delete:
   mov rdi, [rax + node.parent]
 .for:
   cmp [rax + node.left], null
-
+  ; if we have the
 .done:
   leave
   ret
