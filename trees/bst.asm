@@ -57,7 +57,7 @@
 %macro delete 2
   mov rdi, %1
   mov rsi, %2
-  call _delete
+;  call _delete
 %endmacro
 
 ; 1 - root node
@@ -103,10 +103,11 @@ _main:
   insert rax, 0x13, 0x10
   insert rax, 0x14, 0x10
   insert rax, 0x15, 0x10
-  min_depth rax
+  mov r8, 0x8
+  find rax, 0x9
 
   mov rdi, qword format
-  mov rsi, rax
+  mov rsi, [rax + node.key]
   xor rax, rax
   call _printf
 
@@ -144,27 +145,22 @@ _create:
   leave
   ret
 
-; rdi - node
+; rdi - root node
 ; rsi - key
-; return: rax - node that contains the key
 _find:
   push rbp
   mov rbp, rsp
   mov rax, null
-.while:
+.for:
   cmp rdi, null
   je .done
   cmp [rdi + node.key], rsi
-  jg .goleft
-  jl .goright
+  je .found
+  cmovg rdi, [rdi + node.left]
+  cmovl rdi, [rdi + node.right]
+  jmp .for
+.found:
   mov rax, rdi
-  jmp .done
-.goleft:
-  mov rdi, [rdi + node.left]
-  jmp .while
-.goright:
-  mov rdi, [rdi + node.right]
-  jmp .while
 .done:
   leave
   ret
@@ -323,9 +319,12 @@ _min_depth:
 _max:
   push rbp
   mov rbp, rsp
+  mov rax, rdi
+  mov rdi, [rdi + node.right]
 .for:
-  cmp [rdi + node.right], null
+  cmp rdi, null
   je .done
+  mov rax, rdi
   mov rdi, [rdi + node.right]
   jmp .for
 .done:
@@ -337,26 +336,14 @@ _max:
 _min:
   push rbp
   mov rbp, rsp
+  mov rax, rdi
+  mov rdi, [rdi + node.left]
 .for:
-  cmp rdi, [rdi + node.left]
+  cmp rdi, null
   je .done
+  mov rax, rdi
   mov rdi, [rdi + node.left]
   jmp .for
-.done:
-  leave
-  ret
-
-; rdi - root node
-_delete:
-  push rbp
-  mov rbp, rsp
-  find rdi
-  cmp rax, null
-  je .done
-  mov rdi, [rax + node.parent]
-.for:
-  cmp [rax + node.left], null
-  ; if we have the
 .done:
   leave
   ret
