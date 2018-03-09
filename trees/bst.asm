@@ -1,5 +1,4 @@
 ; Created by Vasyl Paliy
-
 %define null 0x00000000
 
 ; 1 - root node
@@ -17,7 +16,7 @@
 %macro find 2
   mov rdi, %1
   mov rsi, %2
-  call _find
+  call ©
 %endmacro
 
 ; 1 - key
@@ -57,7 +56,7 @@
 %macro delete 2
   mov rdi, %1
   mov rsi, %2
-;  call _delete
+  call _delete
 %endmacro
 
 ; 1 - root node
@@ -94,20 +93,14 @@ _main:
   push rbp
   mov rbp, rsp
 
-  create 0x10, 0x10
-  insert rax, 0x8, 0x10
-  insert rax , 0x7, 0x10
-  insert rax, 0xA, 0x10
-  insert rax, 0x12, 0x10
+  create 0x20, 0x10
+  insert rax, 0x21, 0x10
+  insert rax, 0x10, 0x10
   insert rax, 0x11, 0x10
-  insert rax, 0x13, 0x10
-  insert rax, 0x14, 0x10
-  insert rax, 0x15, 0x10
-  mov r8, 0x8
-  find rax, 0x9
+  min_depth rax
 
   mov rdi, qword format
-  mov rsi, [rax + node.key]
+  mov rsi, rax
   xor rax, rax
   call _printf
 
@@ -231,42 +224,30 @@ _size:
   ret
 
 ; rdi - root node
-; return: rax - max depth
-_max_depth:
+; return: rax - min depth
+_min_depth:
   push rbp
   mov rbp, rsp
-  ; if it's a leaf, then return
+  ; if it's a leaf, just return
   xor rax, rax
   cmp rdi, null
   je .done
 
-  inc rax
-  ; allocate memory to keep the current size
   sub rsp, 0x10
-  mov [rsp], rax
-  mov [rsp + 0x8], rdi
-  ; get the depth of the left subtree
+  mov [rsp], rdi
   mov rdi, [rdi + node.left]
-  call _max_depth
-  ; save it
-  mov r8, rax
-  mov rax, [rsp]
-  mov [rsp], r8
-  ; move to the right subtree
-  mov rdi, [rsp + 0x8]
-  mov rdi, [rdi + node.right]
-  ; put the initial length
+  call _min_depth
+
   mov [rsp + 0x8], rax
-  ; get the depth of the right subtree
-  call _max_depth
-  mov r8, [rsp]
-  ; move the bigger value into r8
-  cmp r8, rax
-  cmovl r8, rax
-  ; add to the initial depth
-  mov rax, [rsp + 0x8]
-  add rax, r8
-  ; release stack
+  mov rdi, [rsp]
+  mov rdi, [rdi + node.right]
+  call _min_depth
+
+  mov rdi, [rsp + 0x8]
+  cmp rax, rdi
+  cmovg rax, rdi
+  inc rax
+
   add rsp, 0x10
 .done:
   leave
@@ -274,41 +255,26 @@ _max_depth:
 
 ; rdi - root node
 ; return: rax - max depth
-_min_depth:
+_max_depth:
   push rbp
   mov rbp, rsp
-  ; if it's a leaf, then return
-  xor rax, rax
-  cmp rdi, null
+  mov rdi, null
   je .done
 
-  inc rax
-  ; allocate memory to keep the current size
   sub rsp, 0x10
-  mov [rsp], rax
-  mov [rsp + 0x8], rdi
-  ; get the depth of the left subtree
+  mov [rsp], rdi
   mov rdi, [rdi + node.left]
   call _max_depth
-  ; save it
-  mov r8, rax
-  mov rax, [rsp]
-  mov [rsp], r8
-  ; move to the right subtree
-  mov rdi, [rsp + 0x8]
+
+  mov rdi, [rsp]
+  mov [rsp], rax
   mov rdi, [rdi + node.right]
-  ; put the initial length
-  mov [rsp + 0x8], rax
-  ; get the depth of the right subtree
   call _max_depth
-  mov r8, [rsp]
-  ; move the bigger value into r8
-  cmp r8, rax
-  cmovg r8, rax
-  ; add to the initial depth
-  mov rax, [rsp + 0x8]
-  add rax, r8
-  ; release stack
+
+  mov rdi, [rsp]
+  cmp rax, rdi
+  cmovl rax, rdi
+  inc rax
   add rsp, 0x10
 .done:
   leave
@@ -347,6 +313,80 @@ _min:
 .done:
   leave
   ret
+
+; rdi - root node
+; rsi - key
+; return: rax - root node
+_delete:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 0x10
+  ; save the root node
+  mov [rsp], rdi
+  find rdi, rsi
+  ; rdi contains the target node
+  mov rdi, rax
+  cmp [rdi + node.left], null
+  je .right
+  cmp [rdi + node.right], null
+  je .left
+  ; if both nodes aren't null, then work around the right node
+  mov rax, [rdi + node.right]
+.firstcase:
+  ; find the very left node
+  cmp [rax + node.left], null
+  mov rax, [rax + node.left]
+  je .firstcase
+  ; when the left node is found,
+  mov r8, [rax + node.parent]
+  ; check if the parent is not the target node
+  cmp r8, rdi
+  je .endfirstcase
+  ; save the target node to stack
+  mov [rsp + 0x8], rdi
+  mov rdi, [rax + node.parent]
+  mov r8, [rax + node.right]
+  mov [rdi + node.left], r8
+  cmp r8, null
+  je .afterright
+  mov [r8 + node.parent], rdi
+  mov [rax + node.right], null
+.afterright:
+  mov [rax + node.right], rdi
+  mov [rdi + node.parent], rax
+  mov rdi, [rsp + 0x8]
+.endfirstcase:
+  je .finish
+.left:
+  cmp [rdi + node.left], null
+  je .finish
+  mov rax, [rdi + node.left]
+  jmp .finish
+.right:
+  cmp [rdi + node.right], null
+  je .finish
+  mov rax, [rdi + node.right]
+.finish:
+  ; rax contains the node that will replace the target node
+  ; rdi contains the target node
+  mov rdi, [rsp]
+  cmp rax, rdi
+  jne .done
+  mov r8, [rdi + node.parent]
+  mov [rax + node.parent], r8
+  cmp r8, null
+  je .done
+  cmp [r8 + node.right], rdi
+  jne .connectleft
+  mov [r8 + node.right], rax
+  jmp .done
+.connectleft:
+  mov [r8 + node.left], rax
+.done:
+  add rsp, 0x10
+  leave
+  ret
+
 
 ; rdi - root node
 _show:
